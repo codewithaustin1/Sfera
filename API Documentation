@@ -1,0 +1,315 @@
+Base URL
+Development: http://localhost:8000
+
+Production: http://your-production-domain.com
+
+API Endpoints
+1. Common Controller - Process Multiple Queries
+Endpoint: POST /api/v1/common/process
+
+Description: Main entry point that processes multiple queries through the Validator IS and routes to appropriate services.
+
+Request:
+{
+  "queries": [
+    "79319999999",
+    "testuser@gmail.com",
+    "ABC123456"
+  ]
+}
+
+Response:
+[
+  {
+    "headers": {
+      "sender": "domclick-service"
+    },
+    "body": {
+      "results": [
+        {
+          "first_name": "Иван",
+          "middle_name": "Петрович",
+          "last_name": "Сидоров",
+          "user_id": 1234567,
+          "is_registered": "Да",
+          "is_partner": "Да",
+          "avatar": "https://example.com/avatar.jpg",
+          "partner_link": "https://agencies.domclick.ru/agent/1234567",
+          "client_review": "4.8",
+          "registered_at": "2022-03-15T10:30:00Z",
+          "deals_count": 45,
+          "client_comments_count": 23
+        }
+      ]
+    },
+    "extra": {
+      "query": "79319999999",
+      "data_type": "phone",
+      "results_count": 1,
+      "service_used": "DomClick API"
+    }
+  },
+  {
+    "headers": {
+      "sender": "common-controller"
+    },
+    "body": {
+      "error": "Unsupported data type: email"
+    },
+    "extra": {
+      "query": "testuser@gmail.com",
+      "data_type": "email"
+    }
+  },
+  {
+    "headers": {
+      "sender": "common-controller"
+    },
+    "body": {
+      "error": "Unsupported data type: unknown"
+    },
+    "extra": {
+      "query": "ABC123456",
+      "data_type": "unknown"
+    }
+  }
+]
+
+
+2. DomClick Service - Phone Number Lookup
+Endpoint: GET /api/v1/domclick/search/phone/{phone_number}
+
+Description: Direct access to DomClick phone number lookup service.
+
+Parameters:
+
+phone_number (path parameter): Phone number in international format (e.g., 79319999999)
+
+Request:
+curl -X GET "http://localhost:8000/api/v1/domclick/search/phone/79319999999"
+
+
+Success Response:
+{
+  "headers": {
+    "sender": "domclick-service"
+  },
+  "body": {
+    "results": [
+      {
+        "first_name": "Иван",
+        "middle_name": "Петрович",
+        "last_name": "Сидоров",
+        "user_id": 1234567,
+        "is_registered": "Да",
+        "is_partner": "Да",
+        "avatar": "https://example.com/avatar.jpg",
+        "partner_link": "https://agencies.domclick.ru/agent/1234567",
+        "client_review": "4.8",
+        "registered_at": "2022-03-15T10:30:00Z",
+        "deals_count": 45,
+        "client_comments_count": 23
+      }
+    ]
+  },
+  "extra": {
+    "query": "79319999999",
+    "results_count": 1,
+    "service_used": "DomClick API"
+  }
+}
+
+
+No Data Found Response:
+{
+  "headers": {
+    "sender": "domclick-service"
+  },
+  "body": {
+    "results": []
+  },
+  "extra": {
+    "query": "79310000000",
+    "results_count": 0,
+    "service_used": "DomClick API"
+  }
+}
+
+Error Response:
+{
+  "headers": {
+    "sender": "domclick-service"
+  },
+  "body": {
+    "error": "Processing failed: Unauthorized access to DomClick API"
+  },
+  "extra": {
+    "query": "79319999999",
+    "data_type": "phone"
+  }
+}
+
+3. Health Check
+Endpoint: GET /health
+
+Response:
+
+{
+  "status": "healthy",
+  "mode": "dev"
+}
+
+4. Root Endpoint
+Endpoint: GET /
+
+Response:
+
+{
+  "message": "Sfera Information System API",
+  "version": "1.0.0",
+  "status": "operational"
+}
+
+Response Format Standard
+All API responses follow the SMK-RK corporate standard:
+
+{
+  "headers": {
+    "sender": "service-name"  // Identifies the service that generated the response
+  },
+  "body": {
+    // Core data from the service
+    // Structure varies by service and endpoint
+  },
+  "extra": {
+    
+  }
+}
+
+Data Types Supported via Validator IS
+The system integrates with SMK-RK's Validator IS which currently supports:
+
+Phone numbers
+
+Email addresses
+
+Vehicle license plates
+
+SNILS
+
+Domains and subdomains
+
+Full names (FIO)
+
+Addresses
+
+Usernames
+
+Dates and times
+
+IPv4/IPv6 addresses
+
+VIN numbers
+
+INNs
+
+MAC addresses
+
+OGRNs
+
+Driver's license numbers
+
+Bitcoin wallets
+
+Bank card numbers
+
+BICs
+
+Passports (RF and Lithuania)
+
+Environment Variables
+Variable 
+MODE	     ----         Application mode (dev/prod)	dev
+VALIDATOR_ENDPOINT	  Validator IS API endpoint	http://localhost:8001
+
+Docker Services
+Development Stack
+sfera-api: Main API service (port 8000)
+
+validator: SMK-RK Validator IS (port 8001)
+
+Production Stack
+Same services with production optimizations and restart policies
+
+Monitoring & Logging
+
+Health Checks
+curl http://localhost:8000/health
+
+API Documentation
+Swagger UI: http://localhost:8000/docs
+
+ReDoc: http://localhost:8000/redoc
+
+Error Handling
+The system provides structured error responses:
+
+{
+  "headers": {
+    "sender": "service-name"
+  },
+  "body": {
+    "error": "Descriptive error message"
+  },
+  "extra": {
+    "context": "Additional error context"
+  }
+}
+
+Common HTTP Status Codes:
+
+200: Success
+
+400: Bad Request (invalid input)
+
+500: Internal Server Error
+
+Development
+Adding New Services
+Create Domain Service:
+
+# domain/services/new_service.py
+from domain.interfaces.search_service import ISearchService
+
+class NewService(ISearchService):
+    async def search(self, query: str) -> List[SearchResult]:
+        # Implementation
+
+ Add Controller:
+
+# controllers/new_service_controller.py
+router = APIRouter()
+
+@router.get("/search/{query}")
+async def search_query(query: str):
+    # Handle request
+
+Update Common Controller:
+
+# Add data type handling in controllers/common_controller.py
+if data_type == "new_type":
+    result = await _process_new_type_query(query)
+
+ Testing
+ # Run tests
+pytest
+
+# Test with specific marker
+pytest -m "integration"
+
+Support
+For data types not currently supported by the Validator IS, contact the designated representative of LLC "SMK-RK".
+
+License
+Proprietary - LLC "SMK-RK"
+

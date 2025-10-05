@@ -7,7 +7,6 @@ load_dotenv()
 @dataclass
 class Settings:
     MODE: str = os.getenv("MODE", "dev")
-    PROXY_URL: str = os.getenv("PROXY_URL", "")
-    VALIDATOR_ENDPOINT: str = os.getenv("VALIDATOR_ENDPOINT", "")
+    VALIDATOR_ENDPOINT: str = os.getenv("VALIDATOR_ENDPOINT", "http://localhost:8001")
     
 settings = Settings()

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  sfera-api:
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    ports:
+      - "8000:8000"
+    environment:
+      - MODE=dev
+      - VALIDATOR_ENDPOINT=http://validator:8000
+    volumes:
+      - .:/app
+    depends_on:
+      - validator
+
+  validator:
+    image: smk-validator:latest
+    ports:
+      - "8001:8000"
