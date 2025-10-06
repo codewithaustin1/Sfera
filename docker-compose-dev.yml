@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  sfera-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: sfera-api-dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.dev
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for hot reload
+      - ./api:/app/api
+      - ./controllers:/app/controllers
+      - ./core:/app/core
+      - ./domain:/app/domain
+      - ./infrastructure:/app/infrastructure
+      - ./main.py:/app/main.py
+      - ./requirements.txt:/app/requirements.txt
+    networks:
+      - sfera-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    stdin_open: true
+    tty: true
+
+networks:
+  sfera-network:
+    driver: bridge
